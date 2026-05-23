@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firma Ciega · Certificado Anónimo</title>
+  <link rel="stylesheet" href="/public/device.css" />
+</head>
+<body>
+  <div class="card">
+
+    <div class="steps">
+      <div class="step done">
+        <div class="step-num">✓</div>
+        <div class="step-label">Vincular</div>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step done">
+        <div class="step-num">✓</div>
+        <div class="step-label">Token</div>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step active">
+        <div class="step-num">3</div>
+        <div class="step-label">Firma</div>
+      </div>
+    </div>
+
+    <div class="card-header">
+      <div class="logo-row">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <span class="logo-label">Device Agent · Paso 3 de 3</span>
+      </div>
+      <h1 class="card-title">Firma Ciega RSA</h1>
+      <p class="card-subtitle">Genera y envía el certificado anónimo cegado para obtener la firma del AuthServer.</p>
+    </div>
+
+    <div class="status-tag">
+      <span class="pulse-dot"></span>
+      Access Token activo · Listo para firmar
+    </div>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-key">Protocolo</span>
+        <span class="info-val">RSA Blind Signature</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Firmante</span>
+        <span class="info-val">AuthServer · localhost:5042</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Privacidad</span>
+        <span class="info-val">El firmante no conoce el hash real</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button id="btnPrep" class="btn btn-purple" style="flex:1" onclick="hacerFirmaCiega()">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Preparar Cegado
+      </button>
+
+      <button id="btnEnviar" class="btn btn-teal" style="flex:1" onclick="enviarCertificadoCegado()" disabled>
+        <svg viewBox="0 0 24 24">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Enviar y Firmar
+      </button>
+    </div>
+
+    <div id="output" class="output-panel">Esperando acción...</div>
+
+    <div class="card-footer">Firma anónima · El AuthServer no puede vincular firma con dispositivo</div>
+  </div>
+
+  <script>
+    let blindDone = false;
+
+    async function hacerFirmaCiega() {
+      const btnPrep = document.getElementById('btnPrep');
+      const btnEnviar = document.getElementById('btnEnviar');
+      const out = document.getElementById('output');
+
+      btnPrep.disabled = true;
+      out.className = 'output-panel';
+      out.innerHTML = '<span class="loading-dots">Preparando certificado cegado</span>';
+
+      try {
+        const res = await fetch('/do_blind_sign?code={{code}}');
+        const json = await res.json();
+
+        if (json.status === 'ok') {
+          out.className = 'output-panel has-content';
+          out.textContent = JSON.stringify(json, null, 2);
+          btnEnviar.disabled = false;
+          blindDone = true;
+        } else {
+          out.className = 'output-panel is-error';
+          out.textContent = JSON.stringify(json, null, 2);
+          btnPrep.disabled = false;
+        }
+      } catch (err) {
+        out.className = 'output-panel is-error';
+        out.textContent = 'Error: ' + err.message;
+        btnPrep.disabled = false;
+      }
+    }
+
+    async function enviarCertificadoCegado() {
+      const btnEnviar = document.getElementById('btnEnviar');
+      const out = document.getElementById('output');
+
+      btnEnviar.disabled = true;
+      out.className = 'output-panel';
+      out.innerHTML = '<span class="loading-dots">Enviando al AuthServer y descegando firma</span>';
+
+      try {
+        const res = await fetch('/do_send_blinded_certificate?code={{code}}');
+        const json = await res.json();
+        out.className = json.status === 'ok' ? 'output-panel has-content' : 'output-panel is-error';
+        out.textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        out.className = 'output-panel is-error';
+        out.textContent = 'Error: ' + err.message;
+        btnEnviar.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

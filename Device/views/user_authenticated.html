@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autenticación Confirmada</title>
+  <link rel="stylesheet" href="/public/device.css" />
+</head>
+<body>
+  <div class="card">
+
+    <div class="steps">
+      <div class="step done">
+        <div class="step-num">✓</div>
+        <div class="step-label">Vincular</div>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step active">
+        <div class="step-num">2</div>
+        <div class="step-label">Token</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-label">Firma</div>
+      </div>
+    </div>
+
+    <div class="card-header">
+      <div class="logo-row">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <span class="logo-label">Device Agent · Paso 2 de 3</span>
+      </div>
+      <h1 class="card-title">Autenticación Confirmada</h1>
+      <p class="card-subtitle">El AuthServer ha validado la instalación. Solicita ahora el Access Token.</p>
+    </div>
+
+    <div class="status-tag">
+      <span class="pulse-dot"></span>
+      Código de autorización recibido
+    </div>
+
+    <div class="code-block">
+      <div class="cb-label">Authorization Code</div>
+      {{code}}
+    </div>
+
+    <div class="notice">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      El Access Token se usará en el Paso 3 para la firma ciega del certificado anónimo.
+    </div>
+
+    <button id="btnToken" class="btn btn-primary btn-full" onclick="solicitarToken()">
+      <svg viewBox="0 0 24 24">
+        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+      </svg>
+      Access Request
+    </button>
+
+    <div id="output" class="output-panel">Esperando solicitud...</div>
+
+    <div class="card-footer">Device Agent v1 · Código de un solo uso</div>
+  </div>
+
+  <script>
+    async function solicitarToken() {
+      const btn = document.getElementById('btnToken');
+      const out = document.getElementById('output');
+      btn.disabled = true;
+      out.className = 'output-panel';
+      out.innerHTML = '<span class="loading-dots">Solicitando Access Token</span>';
+
+      try {
+        const res = await fetch('/do_access_request?code={{code}}');
+        const json = await res.json();
+        out.className = 'output-panel has-content';
+        out.textContent = JSON.stringify(json, null, 2);
+        if (json.nextUiUrl) {
+          setTimeout(() => { window.location.href = json.nextUiUrl; }, 700);
+        }
+      } catch (err) {
+        out.className = 'output-panel is-error';
+        out.textContent = 'Error: ' + err.message;
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

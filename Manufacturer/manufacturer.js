@@ -11,22 +11,22 @@ const app = express();
 const port = 5040;
 const manufacturerDir = path.dirname(fileURLToPath(import.meta.url));
 
-// ==============================
-// 1. CARGAR DE CLAVES PAILLIER
-// ==============================
-const privKeyPath = path.join(manufacturerDir, "privateKeyManufacturer.json");
-const pubKeyPath = path.join(manufacturerDir, "publicKeyManufacturer.json");
+// // ==============================
+// // 1. CARGAR DE CLAVES PAILLIER
+// // ==============================
+// const privKeyPath = path.join(manufacturerDir, "privateKeyManufacturer.json");
+// const pubKeyPath = path.join(manufacturerDir, "publicKeyManufacturer.json");
 
-const privKeyJson = JSON.parse(readFileSync(privKeyPath, 'utf-8'));
-const pubKeyJson = JSON.parse(readFileSync(pubKeyPath, 'utf-8'));
+// const privKeyJson = JSON.parse(readFileSync(privKeyPath, 'utf-8'));
+// const pubKeyJson = JSON.parse(readFileSync(pubKeyPath, 'utf-8'));
 
-const n = BigInt(pubKeyJson.n);
-const g = BigInt(pubKeyJson.g);
-const lambda = BigInt(privKeyJson.lambda);
-const mu = BigInt(privKeyJson.mu);
+// const n = BigInt(pubKeyJson.n);
+// const g = BigInt(pubKeyJson.g);
+// const lambda = BigInt(privKeyJson.lambda);
+// const mu = BigInt(privKeyJson.mu);
 
-const publicKey = new paillierBigint.PublicKey(n, g);
-const privateKey = new paillierBigint.PrivateKey(lambda, mu, publicKey);
+// const publicKey = new paillierBigint.PublicKey(n, g);
+// const privateKey = new paillierBigint.PrivateKey(lambda, mu, publicKey);
 
 // ==============================
 // 2. CARGAR DE CLAVES RSA

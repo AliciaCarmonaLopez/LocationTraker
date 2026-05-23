@@ -35,6 +35,20 @@ app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Serve static assets (CSS, etc.)
+app.use("/public", express.static(path.join(authDir, "public")));
+
+// ── Template renderer ──────────────────────────────────────────────────────
+// Replaces {{key}} placeholders in an HTML file with values from a data object.
+function renderTemplate(templateName, data = {}) {
+    const templatePath = path.join(authDir, "views", templateName);
+    let html = readFileSync(templatePath, "utf-8");
+    for (const [key, value] of Object.entries(data)) {
+        html = html.replaceAll(`{{${key}}}`, value ?? "");
+    }
+    return html;
+}
+
 app.get("/rsaPubKey", (req, res) => {
     // El device usa esta clave para cegar el hash antes de pedir firma ciega.
     res.json({
@@ -50,18 +64,7 @@ app.get("/init_device", (req, res) => {
     const { idBaliza, redirect_uri } = req.query;
     if (!idBaliza || !redirect_uri) return res.status(400).send("Faltan parámetros");
 
-    // Simulamos la pantalla de Login del AuthServer
-    res.send(`
-        <h2>Login de Instalador (AuthServer)</h2>
-        <p>Dispositivo a instalar: <strong>${idBaliza}</strong></p>
-        <form action="/login" method="POST">
-            <input type="hidden" name="idBaliza" value="${idBaliza}" />
-            <input type="hidden" name="redirect_uri" value="${redirect_uri}" />
-            Usuario: <input type="text" name="username" value="instalador_1" /><br><br>
-            Password: <input type="password" name="password" value="1234" /><br><br>
-            <button type="submit">Iniciar Sesión</button>
-        </form>
-    `);
+    res.send(renderTemplate("login.html", { idBaliza, redirect_uri }));
 });
 
 // ==============================
@@ -72,20 +75,12 @@ app.post("/login", (req, res) => {
 
     if (password !== "1234") return res.status(401).send("Credenciales incorrectas");
 
-    // Pantalla de confirmación
-    res.send(`
-        <h2>Confirmación de Instalación</h2>
-        <p>Hola, <strong>${username}</strong>.</p>
-        <p>¿Confirmas que el dispositivo <strong>${idBaliza}</strong> está instalado correctamente?</p>
-        <form action="/confirm" method="POST">
-            <input type="hidden" name="idBaliza" value="${idBaliza}" />
-            <input type="hidden" name="redirect_uri" value="${redirect_uri}" />
-            <input type="hidden" name="username" value="${username}" />
-            <button type="submit" style="background-color: green; color: white; padding: 10px;">
-                Sí, confirmar instalación
-            </button>
-        </form>
-    `);
+    res.send(renderTemplate("confirm.html", {
+        idBaliza,
+        redirect_uri,
+        username,
+        timestamp: new Date().toISOString()
+    }));
 });
 
 // ==============================

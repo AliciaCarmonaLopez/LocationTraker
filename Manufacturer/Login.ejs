@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>AuthServer</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/styles.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h1>AuthServer</h1>
+
+            <p class="subtitle">
+                Instalación segura del dispositivo
+            </p>
+
+            <div class="device-box">
+
+                <span>Baliza detectada:</span>
+
+                <strong>
+                    <%= idBaliza %>
+                </strong>
+
+            </div>
+
+            <form
+                action="/login"
+                method="POST"
+            >
+
+                <input
+                    type="hidden"
+                    name="idBaliza"
+                    value="<%= idBaliza %>"
+                >
+
+                <input
+                    type="hidden"
+                    name="redirect_uri"
+                    value="<%= redirect_uri %>"
+                >
+
+                <div class="input-group">
+
+                    <label>
+                        Usuario
+                    </label>
+
+                    <input
+                        type="text"
+                        name="username"
+                        value="instalador_1"
+                        required
+                    >
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>
+                        Contraseña
+                    </label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        value="1234"
+                        required
+                    >
+
+                </div>
+
+                <button type="submit">
+                    Iniciar sesión
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

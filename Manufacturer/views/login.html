@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autenticación de Instalador</title>
+  <link rel="stylesheet" href="/public/auth.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="logo-row">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <span class="logo-label">AuthServer · Acceso seguro</span>
+      </div>
+      <h1 class="card-title">Login de Instalador</h1>
+      <p class="card-subtitle">Identifícate para proceder con la instalación del dispositivo.</p>
+    </div>
+
+    <div class="device-tag">
+      <span class="dot"></span>
+      Dispositivo: <strong>{{idBaliza}}</strong>
+    </div>
+
+    <form action="/login" method="POST" autocomplete="off">
+      <input type="hidden" name="idBaliza" value="{{idBaliza}}" />
+      <input type="hidden" name="redirect_uri" value="{{redirect_uri}}" />
+
+      <div class="field">
+        <label for="username">Usuario</label>
+        <input type="text" id="username" name="username" value="instalador_1" autocomplete="username" />
+      </div>
+
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password" value="1234" autocomplete="current-password" />
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Iniciar Sesión
+      </button>
+    </form>
+
+    <div class="card-footer">Acceso restringido · Solo personal autorizado</div>
+  </div>
+</body>
+</html>

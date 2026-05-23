@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/AliciaCarmonaLopez/LocationTraker#readme",
   "dependencies": {
+    "ejs": "^5.0.2",
     "express": "^4.21.2",
     "morgan": "^1.10.0",
     "paillier-bigint": "^3.4.3",

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirmar Instalación</title>
+  <link rel="stylesheet" href="/public/auth.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="logo-row">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </div>
+        <span class="logo-label">AuthServer · Confirmación</span>
+      </div>
+      <h1 class="card-title">Confirmar Instalación</h1>
+      <p class="card-subtitle">Revisa los datos antes de completar el registro del dispositivo.</p>
+    </div>
+
+    <div class="confirm-box">
+      <p>Instalador</p>
+      <strong class="installer-name">{{username}}</strong>
+      <div class="divider" style="margin: .65rem 0;"></div>
+      <p>Dispositivo a registrar</p>
+      <strong>{{idBaliza}}</strong>
+    </div>
+
+    <div class="warning-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      Esta acción vinculará el dispositivo de forma permanente a tu cuenta de instalador.
+    </div>
+
+    <form action="/confirm" method="POST">
+      <input type="hidden" name="idBaliza" value="{{idBaliza}}" />
+      <input type="hidden" name="redirect_uri" value="{{redirect_uri}}" />
+      <input type="hidden" name="username" value="{{username}}" />
+
+      <button type="submit" class="btn btn-confirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Sí, confirmar instalación
+      </button>
+    </form>
+
+    <div class="card-footer">Operación registrada y auditada · {{timestamp}}</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vinculación de Dispositivo</title>
+  <link rel="stylesheet" href="/public/device.css" />
+</head>
+<body>
+  <div class="card">
+
+    <div class="steps">
+      <div class="step active">
+        <div class="step-num">1</div>
+        <div class="step-label">Vincular</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-label">Token</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-label">Firma</div>
+      </div>
+    </div>
+
+    <div class="card-header">
+      <div class="logo-row">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <span class="logo-label">Device Agent · Paso 1 de 3</span>
+      </div>
+      <h1 class="card-title">Vinculación de Dispositivo</h1>
+      <p class="card-subtitle">Inicia sesión en el servidor de autorización para registrar este dispositivo.</p>
+    </div>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-key">Device ID</span>
+        <span class="info-val">{{DEVICE_ID}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Auth Server</span>
+        <span class="info-val">localhost:5042</span>
+      </div>
+    </div>
+
+    <div class="notice">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Serás redirigido al AuthServer para autenticarte como instalador autorizado.
+    </div>
+
+    <a href="{{authUrl}}" style="text-decoration:none;">
+      <button class="btn btn-primary btn-full">
+        <svg viewBox="0 0 24 24">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Autenticarse en AuthServer
+      </button>
+    </a>
+
+    <div class="card-footer">Device Agent v1 · {{DEVICE_ID}} · Puerto 5041</div>
+  </div>
+</body>
+</html>

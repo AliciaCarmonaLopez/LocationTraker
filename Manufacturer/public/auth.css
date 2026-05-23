@@ -1,0 +1,312 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:          #080c10;
+  --surface:     #0d1318;
+  --surface-2:   #121a22;
+  --border:      #1e2e3a;
+  --border-glow: #1a4a6a;
+  --accent:      #00c8ff;
+  --accent-dim:  #0080a8;
+  --accent-glow: rgba(0, 200, 255, 0.12);
+  --success:     #00e5a0;
+  --danger:      #ff4d6a;
+  --text:        #d4e8f0;
+  --text-muted:  #5a7a8a;
+  --text-dim:    #3a5a6a;
+  --mono:        'Space Mono', monospace;
+  --sans:        'Syne', sans-serif;
+}
+
+html, body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.6;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,100,160,0.18) 0%, transparent 70%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(0,200,255,0.025) 39px,
+      rgba(0,200,255,0.025) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 39px,
+      rgba(0,200,255,0.025) 39px,
+      rgba(0,200,255,0.025) 40px
+    );
+}
+
+/* ── CARD ─────────────────────────────────── */
+.card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2.5rem 2.5rem 2rem;
+  position: relative;
+  animation: fadeUp .45s cubic-bezier(.22,.9,.36,1) both;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--accent-dim) 0%, transparent 50%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── HEADER ───────────────────────────────── */
+.card-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--accent-dim);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--accent-glow);
+}
+
+.logo-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--accent);
+}
+
+.logo-label {
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.card-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.card-subtitle {
+  margin-top: .35rem;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+/* ── DEVICE TAG ───────────────────────────── */
+.device-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-glow);
+  border-radius: 3px;
+  padding: .35rem .75rem;
+  font-family: var(--mono);
+  font-size: .75rem;
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+.device-tag .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease infinite;
+}
+
+/* ── FORM ELEMENTS ────────────────────────── */
+.field {
+  margin-bottom: 1.1rem;
+}
+
+label {
+  display: block;
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: .4rem;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: .65rem .9rem;
+  font-family: var(--mono);
+  font-size: .85rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ── BUTTONS ──────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  width: 100%;
+  padding: .8rem 1.25rem;
+  border: none;
+  border-radius: 3px;
+  font-family: var(--sans);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  cursor: pointer;
+  transition: filter .2s, transform .15s;
+  margin-top: .75rem;
+}
+
+.btn:active { transform: scale(.98); }
+
+.btn-primary {
+  background: linear-gradient(135deg, #0080a8 0%, #00c8ff 100%);
+  color: #fff;
+}
+.btn-primary:hover { filter: brightness(1.12); }
+
+.btn-confirm {
+  background: linear-gradient(135deg, #006644 0%, #00e5a0 100%);
+  color: #fff;
+}
+.btn-confirm:hover { filter: brightness(1.1); }
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── CONFIRM BOX ──────────────────────────── */
+.confirm-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border-glow);
+  border-radius: 3px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.confirm-box p {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-bottom: .3rem;
+}
+
+.confirm-box strong {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: .85rem;
+}
+
+.confirm-box .installer-name {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── DIVIDER ──────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1.25rem 0;
+}
+
+/* ── FOOTER ───────────────────────────────── */
+.card-footer {
+  margin-top: 1.5rem;
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .08em;
+  color: var(--text-dim);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── WARNING BADGE ────────────────────────── */
+.warning-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  background: rgba(255, 77, 106, 0.07);
+  border: 1px solid rgba(255, 77, 106, 0.25);
+  border-radius: 3px;
+  padding: .65rem .9rem;
+  font-size: .78rem;
+  color: #ff8fa0;
+  margin-bottom: 1.25rem;
+}
+
+.warning-badge svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--danger);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── ANIMATIONS ───────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .3; }
+}
