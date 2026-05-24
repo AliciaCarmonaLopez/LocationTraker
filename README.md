@@ -47,6 +47,7 @@ node Manufacturer/authServer.js
 
 ```bash
 node Device/device.js
+to run more than one device: bash rundevices.sh
 ```
 ## Flujo de onboarding
 

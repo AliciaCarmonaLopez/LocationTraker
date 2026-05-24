@@ -50,36 +50,83 @@ const modPow = (base, exp, modulus) => {
     return result;
 };
 
-// ── Barcelona route ───────────────────────────────────────────────────────
-const WAYPOINTS = [
-    [41.3851,  2.1734],   // Plaça Catalunya
-    [41.3964,  2.1610],   // Gràcia
-    [41.4017,  2.1398],   // Sarrià
-    [41.3890,  2.1225],   // Les Corts / Camp Nou
-    [41.3750,  2.1498],   // Sants
-    [41.3640,  2.1493],   // Montjuïc nord
-    [41.3553,  2.1617],   // Port Olímpic
-    [41.3762,  2.1897],   // Barceloneta
-    [41.3936,  2.1962],   // Poblenou
-    [41.4053,  2.2014],   // Besòs
-    [41.4105,  2.1870],   // Sant Andreu
-    [41.4112,  2.1658],   // Horta
-    [41.4060,  2.1430],   // Vall d'Hebron
-    [41.3980,  2.1380],   // Pedralbes
-    [41.3910,  2.1510],   // Diagonal
-    [41.3851,  2.1734],   // back to start
-];
+// ── Barcelona routes — one per device ────────────────────────────────────
+// Each route is a closed loop through a distinct part of the city.
+const ROUTES = {
+    // Route A: Eixample → Gràcia → Sarrià → Les Corts → Sants → Montjuïc → back
+    A: [
+        [41.3851,  2.1734],   // Plaça Catalunya
+        [41.3964,  2.1610],   // Gràcia
+        [41.4017,  2.1398],   // Sarrià
+        [41.3890,  2.1225],   // Les Corts / Camp Nou
+        [41.3750,  2.1498],   // Sants
+        [41.3640,  2.1493],   // Montjuïc nord
+        [41.3730,  2.1680],   // Paral·lel
+        [41.3851,  2.1734],   // back to start
+    ],
+    // Route B: Barceloneta coastal loop → Poblenou → Besòs → back
+    B: [
+        [41.3762,  2.1897],   // Barceloneta
+        [41.3720,  2.1980],   // Port Olímpic
+        [41.3840,  2.2010],   // Poblenou sud
+        [41.3936,  2.1962],   // Poblenou nord
+        [41.4053,  2.2014],   // Besòs
+        [41.4080,  2.1900],   // Sant Adrià
+        [41.3950,  2.1850],   // Rambla del Poblenou
+        [41.3762,  2.1897],   // back to start
+    ],
+    // Route C: Horta → Sant Andreu → Nou Barris → Vall d'Hebron → back
+    C: [
+        [41.4112,  2.1658],   // Horta
+        [41.4105,  2.1870],   // Sant Andreu
+        [41.4170,  2.1760],   // Nou Barris
+        [41.4200,  2.1580],   // Roquetes
+        [41.4130,  2.1450],   // Vall d'Hebron
+        [41.4060,  2.1430],   // Vall d'Hebron sud
+        [41.4112,  2.1658],   // back to start
+    ],
+    // Route D: Pedralbes → Diagonal → Eixample → Sagrada Família → back
+    D: [
+        [41.3880,  2.1140],   // Pedralbes
+        [41.3920,  2.1380],   // Diagonal / Les Corts
+        [41.3910,  2.1510],   // Diagonal centre
+        [41.3980,  2.1620],   // Diagonal / Passeig de Gràcia
+        [41.4036,  2.1744],   // Sagrada Família
+        [41.3980,  2.1800],   // Clot
+        [41.3900,  2.1700],   // Eixample dret
+        [41.3880,  2.1140],   // back to start
+    ],
+    // Route E: Montjuïc full loop → port → Barceloneta → back
+    E: [
+        [41.3640,  2.1493],   // Montjuïc nord
+        [41.3553,  2.1617],   // Montjuïc sud / Port
+        [41.3600,  2.1750],   // Barceloneta sud
+        [41.3762,  2.1897],   // Barceloneta nord
+        [41.3730,  2.1780],   // Sant Antoni
+        [41.3700,  2.1600],   // Poble Sec
+        [41.3640,  2.1493],   // back to start
+    ],
+};
 
-function buildRoute(steps = 50) {
+const ROUTE_KEYS = Object.keys(ROUTES);  // ['A','B','C','D','E']
+
+function buildRoute(waypoints, steps = 50) {
     const pts = [];
-    for (let i = 0; i < WAYPOINTS.length - 1; i++) {
-        const [la, lo] = WAYPOINTS[i], [lb, lb2] = WAYPOINTS[i + 1];
+    for (let i = 0; i < waypoints.length - 1; i++) {
+        const [la, lo] = waypoints[i], [lb, lb2] = waypoints[i + 1];
         for (let s = 0; s < steps; s++) {
             const t = s / steps;
             pts.push([la + (lb - la) * t, lo + (lb2 - lo) * t]);
         }
     }
     return pts;
+}
+
+// Pick route deterministically from deviceId
+function pickRoute(deviceId) {
+    const sum  = [...deviceId].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const key  = ROUTE_KEYS[sum % ROUTE_KEYS.length];
+    return { key, waypoints: ROUTES[key] };
 }
 
 function bearing([lat1, lon1], [lat2, lon2]) {
@@ -92,7 +139,7 @@ function bearing([lat1, lon1], [lat2, lon2]) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
-export function startBeaconSender(identityPath) {
+export function startBeaconSender(identityPath, deviceId = "device-001") {
     if (!existsSync(identityPath)) {
         console.error("[Beacon] anonymousIdentity.json not found — aborting.");
         return null;
@@ -109,10 +156,14 @@ export function startBeaconSender(identityPath) {
     // Fetched once at startup
     let n_auth = null, e_auth = null;
 
-    const route    = buildRoute(50);
-    let   idx      = 0;
-    let   active   = true;
-    let   timer    = null;
+    const { key: routeKey, waypoints } = pickRoute(deviceId);
+    const route = buildRoute(waypoints, 50);
+
+    let   idx    = 0;
+    let   active = true;
+    let   timer  = null;
+
+    console.log(`[Beacon] device=${deviceId}  route=${routeKey}  points=${route.length}`);
 
     // Fetch AuthServer public key then start sending
     fetch("http://localhost:5042/rsaPubKey")
