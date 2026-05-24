@@ -5,7 +5,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { randomBytes, createHash } from "crypto";
 import * as rsaLab from "rsalab";
+import {startBeaconSender} from "./beaconSender.js";
 
+let beaconHandle = null;
 const app = express();
 const port = 5041;
 const deviceDir = path.dirname(fileURLToPath(import.meta.url));
@@ -14,7 +16,6 @@ const signedCertPath = path.join(deviceDir, "signedCertificate.json");
 const anonymousIdentityPath = path.join(deviceDir, "anonymousIdentity.json");
 const accessTokenByCode = new Map();
 const pendingBlindByCode = new Map();
-
 const DEVICE_ID = "device-001";
 
 app.use(morgan("dev"));
@@ -182,12 +183,12 @@ app.get("/pegatina", (req, res) => {
 // 2. El redirect_uri al que vuelve el AuthServer
 app.get("/user_authenticated", (req, res) => {
     const { code } = req.query;
-    if (!code) return res.status(400).send("No se recibió ningún código");
+    if (!code) return res.status(400).send("No se recibió ningún código");    
     res.send(renderTemplate("user_authenticated.html", { code }));
 });
 
 // 3. UI del paso 3 – firma ciega
-app.get("/ui_device_3", (req, res) => {
+app.get("/start_blind_sign", (req, res) => {
     const { code } = req.query;
     if (!code) return res.status(400).send("Falta code");
     if (!accessTokenByCode.has(code)) {
@@ -213,7 +214,7 @@ app.get("/do_access_request", async (req, res) => {
             console.log("¡Access Token recibido exitosamente!", result);
             if (result.access_token) {
                 accessTokenByCode.set(code, result.access_token);
-                result.nextUiUrl = `/ui_device_3?code=${encodeURIComponent(code)}`;
+                result.nextUiUrl = `/start_blind_sign?code=${encodeURIComponent(code)}`;
             }
         } else {
             console.error("Fallo al obtener Access Token:", result);
@@ -249,6 +250,9 @@ app.get("/do_send_blinded_certificate", async (req, res) => {
     try {
         const anonymousResult = await sendBlindedCertificate(accessToken, prepared);
         pendingBlindByCode.delete(code);
+        if (!beaconHandle) {
+            beaconHandle = startBeaconSender(anonymousIdentityPath);
+        }
         res.json({ status: "ok", anonymous_identity: anonymousResult });
     } catch (err) {
         res.status(500).json({ error: err.message });

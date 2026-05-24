@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AuthServer · Tracking</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --bg:       #02080a;
+      --surface:  #040f12;
+      --surface2: #071418;
+      --scanline: rgba(0,255,160,.028);
+      --border:   #0a2820;
+      --glow:     #0d3d28;
+      --acc:      #00ffa0;
+      --acc2:     #00cccc;
+      --acc3:     #39ff6e;
+      --dim:      #1a4a38;
+      --muted:    #2a7a58;
+      --text:     #8affd4;
+      --bright:   #d0fff0;
+      --danger:   #ff4060;
+      --amber:    #ffcc00;
+      --mono:     'Share Tech Mono', monospace;
+      --cond:     'Barlow Condensed', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%; width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      overflow: hidden;
+    }
+
+    /* CRT scanline effect */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 2px,
+        var(--scanline) 2px, var(--scanline) 4px
+      );
+    }
+
+    /* ── LAYOUT ── */
+    .shell {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: 48px 1fr;
+      height: 100vh;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border-bottom: 1px solid var(--glow);
+      display: flex; align-items: center; gap: 1.25rem;
+      padding: 0 1.25rem;
+      position: relative;
+    }
+    .topbar::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--acc), transparent);
+      opacity: .4;
+    }
+
+    .tb-brand {
+      display: flex; align-items: baseline; gap: .5rem;
+    }
+    .tb-server {
+      font-family: var(--cond);
+      font-size: 1.05rem; font-weight: 900;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--bright);
+    }
+    .tb-module {
+      font-size: .65rem; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--acc);
+    }
+
+    .tb-sep { width: 1px; height: 20px; background: var(--border); }
+
+    .tb-stat { font-size: .7rem; color: var(--muted); }
+    .tb-stat .val { color: var(--acc); }
+
+    .spacer { flex: 1; }
+
+    .live-badge {
+      display: flex; align-items: center; gap: .5rem;
+      border: 1px solid var(--glow);
+      border-radius: 2px;
+      padding: .2rem .65rem;
+      font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--acc3);
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--acc3);
+      box-shadow: 0 0 6px var(--acc3);
+      animation: blink 1.4s ease infinite;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sb-header {
+      padding: .7rem 1rem .5rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sb-title {
+      font-size: .58rem; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--dim);
+    }
+
+    /* device card */
+    #deviceList { padding: .5rem .75rem; flex-shrink: 0; }
+
+    .dev-card {
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: .55rem .75rem;
+      margin-bottom: .45rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .3s;
+    }
+    .dev-card.active { border-color: var(--glow); }
+    .dev-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+      background: var(--acc3);
+      box-shadow: 0 0 8px var(--acc3);
+    }
+    .dc-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
+    .dc-pulse {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--acc3); flex-shrink: 0;
+      box-shadow: 0 0 6px var(--acc3);
+      animation: blink 1.4s ease infinite;
+    }
+    .dc-id {
+      font-size: .7rem; color: var(--acc2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+    }
+    .dc-coords { font-size: .65rem; color: var(--text); margin-bottom: .25rem; }
+    .dc-row { display: flex; gap: .75rem; }
+    .dc-item { font-size: .58rem; }
+    .dc-item .k { color: var(--muted); }
+    .dc-item .v { color: var(--text); }
+
+    /* log */
+    .log-header {
+      padding: .45rem 1rem .3rem;
+      font-size: .55rem; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--dim);
+      flex-shrink: 0; border-top: 1px solid var(--border);
+    }
+
+    .log-wrap {
+      flex: 1; overflow-y: auto; padding: .25rem .5rem;
+    }
+    .log-wrap::-webkit-scrollbar { width: 3px; }
+    .log-wrap::-webkit-scrollbar-thumb { background: var(--glow); }
+
+    .log-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: .5rem;
+      padding: .3rem .5rem;
+      border-bottom: 1px solid rgba(0,40,30,.6);
+      font-size: .62rem;
+      animation: slide-in .25s ease both;
+    }
+    .log-row:hover { background: var(--surface2); }
+    .lr-coords { color: var(--bright); }
+    .lr-meta { color: var(--muted); font-size: .57rem; }
+    .lr-ok { color: var(--acc3); font-size: .6rem; }
+
+    /* ── MAP ── */
+    .map-wrap { position: relative; overflow: hidden; }
+    #map { width: 100%; height: 100%; }
+
+    /* dark map tiles */
+    .leaflet-tile-pane { filter: brightness(.12) saturate(0); }
+    .leaflet-container { background: var(--bg); }
+
+    /* route line and marker override via JS */
+
+    /* ── OVERLAYS ── */
+    .hud-tl, .hud-br {
+      position: absolute; z-index: 800;
+      border: 1px solid var(--glow);
+      background: rgba(2,8,10,.88);
+      backdrop-filter: blur(6px);
+      padding: .65rem .85rem;
+    }
+    .hud-tl { top: .75rem; left: .75rem; min-width: 190px; }
+    .hud-br { bottom: .75rem; right: .75rem; min-width: 190px; }
+
+    .hud-title {
+      font-size: .52rem; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--dim);
+      margin-bottom: .5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .3rem;
+    }
+    .hud-row {
+      display: flex; justify-content: space-between;
+      gap: .75rem; font-size: .65rem; padding: .18rem 0;
+    }
+    .hud-k { color: var(--muted); }
+    .hud-v { color: var(--acc); font-weight: 400; }
+    .hud-v.ok  { color: var(--acc3); }
+    .hud-v.bad { color: var(--danger); }
+
+    /* verification flash */
+    .flash {
+      position: absolute; top: .75rem; right: .75rem; z-index: 900;
+      display: flex; align-items: center; gap: .5rem;
+      border: 1px solid var(--glow);
+      background: rgba(0,255,160,.07);
+      padding: .35rem .75rem;
+      font-size: .65rem; letter-spacing: .08em;
+      color: var(--acc3);
+      animation: flash-in .25s ease both;
+      display: none;
+    }
+    .flash.bad { border-color: rgba(255,64,96,.4); background: rgba(255,64,96,.07); color: var(--danger); }
+
+    /* corner brackets decorations */
+    .hud-tl::before, .hud-tl::after,
+    .hud-br::before, .hud-br::after {
+      content: '';
+      position: absolute; width: 7px; height: 7px;
+    }
+    .hud-tl::before { top: -1px; left: -1px; border-top: 2px solid var(--acc); border-left: 2px solid var(--acc); }
+    .hud-tl::after  { bottom: -1px; right: -1px; border-bottom: 2px solid var(--acc); border-right: 2px solid var(--acc); }
+    .hud-br::before { top: -1px; right: -1px; border-top: 2px solid var(--acc); border-right: 2px solid var(--acc); }
+    .hud-br::after  { bottom: -1px; left: -1px; border-bottom: 2px solid var(--acc); border-left: 2px solid var(--acc); }
+
+    /* crosshair on latest position */
+    .crosshair-ring {
+      width: 20px; height: 20px;
+      border: 1.5px solid var(--acc3);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--acc3), inset 0 0 6px rgba(0,255,160,.2);
+      animation: ring-pulse 1.5s ease infinite;
+    }
+
+    @keyframes blink       { 0%,100%{opacity:1} 50%{opacity:.2} }
+    @keyframes ring-pulse  { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.4} }
+    @keyframes slide-in    { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
+    @keyframes flash-in    { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="tb-brand">
+      <span class="tb-server">AuthServer</span>
+      <span class="tb-module">// track</span>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-stat">BEACONS <span class="val" id="cTotal">0</span></div>
+    <div class="tb-stat">DEVICES <span class="val" id="cDevices">0</span></div>
+    <div class="tb-stat">VERIFIED <span class="val" id="cVerified">0</span></div>
+    <div class="spacer"></div>
+    <div class="live-badge"><span class="live-dot"></span>SSE LIVE</div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-header">
+      <div class="sb-title">Active devices</div>
+    </div>
+    <div id="deviceList"></div>
+    <div class="log-header">Beacon log</div>
+    <div class="log-wrap"><div id="logRows"></div></div>
+  </aside>
+
+  <!-- MAP -->
+  <main class="map-wrap">
+    <div id="map"></div>
+
+    <!-- top-left HUD: current device info -->
+    <div class="hud-tl" id="hudTL" style="display:none">
+      <div class="hud-title">// last beacon</div>
+      <div class="hud-row"><span class="hud-k">ANON_ID</span><span class="hud-v" id="h-id">—</span></div>
+      <div class="hud-row"><span class="hud-k">LAT</span><span class="hud-v" id="h-lat">—</span></div>
+      <div class="hud-row"><span class="hud-k">LNG</span><span class="hud-v" id="h-lng">—</span></div>
+      <div class="hud-row"><span class="hud-k">SPEED</span><span class="hud-v" id="h-spd">—</span></div>
+      <div class="hud-row"><span class="hud-k">HEADING</span><span class="hud-v" id="h-hdg">—</span></div>
+    </div>
+
+    <!-- bottom-right HUD: crypto verification status -->
+    <div class="hud-br" id="hudBR" style="display:none">
+      <div class="hud-title">// crypto verify</div>
+      <div class="hud-row"><span class="hud-k">CERT_SEAL</span><span class="hud-v ok">RSA ✓</span></div>
+      <div class="hud-row"><span class="hud-k">AUTH_SIG</span><span class="hud-v ok">blind-sig ✓</span></div>
+      <div class="hud-row"><span class="hud-k">LOC_SIG</span><span class="hud-v ok" id="h-locsig">anon_priv ✓</span></div>
+      <div class="hud-row"><span class="hud-k">SCHEME</span><span class="hud-v">hash^d mod n</span></div>
+    </div>
+
+    <!-- verification flash -->
+    <div class="flash" id="flash"></div>
+  </main>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ── Map ────────────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: false, attributionControl: false })
+             .setView([41.3851, 2.1734], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+// ── State ──────────────────────────────────────────────────────────────────
+const devices    = {};   // anonId → { marker, polyline, trail:[], last }
+const logBuffer  = [];
+let totalBeacons = 0;
+let totalVerified = 0;
+
+function shortId(id) { return id.slice(0, 10) + '…'; }
+
+// ── Custom marker ──────────────────────────────────────────────────────────
+function makeMarker(lat, lng) {
+    const el = document.createElement('div');
+    el.className = 'crosshair-ring';
+    return L.marker([lat, lng], {
+        icon: L.divIcon({ html: el, className: '', iconSize: [20, 20], iconAnchor: [10, 10] })
+    });
+}
+
+// ── HUD updates ───────────────────────────────────────────────────────────
+function updateHUD(b) {
+    document.getElementById('hudTL').style.display = 'block';
+    document.getElementById('hudBR').style.display = 'block';
+    document.getElementById('h-id').textContent  = shortId(b.anonId);
+    document.getElementById('h-lat').textContent = b.lat.toFixed(6);
+    document.getElementById('h-lng').textContent = b.lng.toFixed(6);
+    document.getElementById('h-spd').textContent = (b.speed || 0).toFixed(1) + ' km/h';
+    document.getElementById('h-hdg').textContent = (b.heading || 0).toFixed(1) + '°';
+}
+
+function showFlash(ok, text) {
+    const f = document.getElementById('flash');
+    f.className = 'flash' + (ok ? '' : ' bad');
+    f.textContent = text;
+    f.style.display = 'flex';
+    clearTimeout(f._t);
+    f._t = setTimeout(() => f.style.display = 'none', 2200);
+}
+
+// ── Device sidebar ─────────────────────────────────────────────────────────
+function renderDevices() {
+    document.getElementById('cDevices').textContent = Object.keys(devices).length;
+    const container = document.getElementById('deviceList');
+    container.innerHTML = Object.entries(devices).map(([id, d]) => {
+        const b = d.last;
+        return `<div class="dev-card active">
+          <div class="dc-head">
+            <span class="dc-pulse"></span>
+            <span class="dc-id" title="${b.anonId}">${shortId(b.anonId)}</span>
+          </div>
+          <div class="dc-coords">${b.lat.toFixed(5)}, ${b.lng.toFixed(5)}</div>
+          <div class="dc-row">
+            <div class="dc-item"><span class="k">SPD </span><span class="v">${(b.speed||0).toFixed(1)}</span></div>
+            <div class="dc-item"><span class="k">HDG </span><span class="v">${(b.heading||0).toFixed(0)}°</span></div>
+            <div class="dc-item"><span class="k">SIG </span><span class="v" style="color:var(--acc3)">OK</span></div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────
+function appendLog(b) {
+    logBuffer.unshift(b);
+    if (logBuffer.length > 80) logBuffer.pop();
+    document.getElementById('logRows').innerHTML = logBuffer.map(r =>
+        `<div class="log-row">
+          <div>
+            <div class="lr-coords">${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}</div>
+            <div class="lr-meta">${shortId(r.anonId)} · ${new Date(r.timestamp).toLocaleTimeString()}</div>
+          </div>
+          <span class="lr-ok">✓</span>
+        </div>`
+    ).join('');
+}
+
+// ── Handle incoming beacon ─────────────────────────────────────────────────
+function handleBeacon(b) {
+    totalBeacons++;
+    totalVerified++;
+    document.getElementById('cTotal').textContent    = totalBeacons;
+    document.getElementById('cVerified').textContent = totalVerified;
+
+    const id = b.anonId;
+    if (!devices[id]) {
+        const marker   = makeMarker(b.lat, b.lng).addTo(map);
+        const polyline = L.polyline([], {
+            color: '#00ffa0', weight: 1.5, opacity: .55
+        }).addTo(map);
+        devices[id] = { marker, polyline, trail: [], last: b };
+        map.flyTo([b.lat, b.lng], 14, { duration: 1 });
+    }
+
+    const d = devices[id];
+    d.trail.push([b.lat, b.lng]);
+    d.last = b;
+    d.marker.setLatLng([b.lat, b.lng]);
+    d.polyline.setLatLngs(d.trail.slice(-120));
+
+    updateHUD(b);
+    renderDevices();
+    appendLog(b);
+    showFlash(true, `▸ ${shortId(b.anonId)}  ${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}  sig:OK`);
+}
+
+// ── SSE connection ─────────────────────────────────────────────────────────
+const sse = new EventSource('/track/feed');
+sse.addEventListener('beacon', e => handleBeacon(JSON.parse(e.data)));
+sse.onerror = () => console.warn('[SSE] reconnecting…');
+</script>
+</body>
+</html>
